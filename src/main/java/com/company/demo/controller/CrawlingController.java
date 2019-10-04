@@ -38,6 +38,8 @@ public class CrawlingController {
 	private int SOURCEID_wikitree_fashion = 3;
 	private int SOURCEID_wikitree_food = 4;
 	
+	// DB에서 소스아이디에 해당하는 정보를 가져와서 여기서 크롤러에 넣는 식으로 진행
+	
 	@EventListener(ApplicationReadyEvent.class)
 	public void doSomethingAfterStartup() {
 		//DB 비울까 말까?
@@ -48,6 +50,28 @@ public class CrawlingController {
 		
 		logger.info("Started initial web Crawling to wikitree - thread : {}",Thread.currentThread().getName());
 		executeWikitreeCrawling();
+	}
+
+	@Scheduled(fixedDelay = 172800000) // 2틀마다 실행 (수정 가능성 큰 주기)
+	public void executeUpdateCrawlingEveryTwoDays() {
+		
+		logger.info("Start Scheduling Thread : {}", Thread.currentThread().getName());
+		
+		// 모든 사이트 수정 크롤러
+		// 그냥 정해진 시작점부터 쭉 수정해나가는 크롤러 (경우의 수? 또는 모두 업데이트 해버리기?)
+		// 끼어들기, 삭제, 수정
+
+		logger.info("End Scheduling Thread");
+	}
+	
+	@Scheduled(cron = "0 0 10 15W * ?")  // 한달에 15일에 가까운 평일에 한 번 실행 (수정 가능성 희박한 주기)
+	public void executeUpdateCrawling1stDayOfEveryMonth() {
+		
+		logger.info("Start Scheduling Thread : {}", Thread.currentThread().getName());
+		
+		// 모든 사이트 수정 크롤러
+
+		logger.info("End Scheduling Thread");
 	}
 	
 	@Scheduled(cron = "0 40 * * * MON-FRI") // 평일 정각마다 돌아감
