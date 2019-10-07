@@ -48,7 +48,7 @@ public class InsightCrawler extends Crawler{
         
 		try {
 			
-			listPage = Jsoup.connect(listUrl + "?page=" + page).get();
+			listPage = Jsoup.connect(siteUrl + listUrl + "?page=" + page).get();
 			
 		} catch (IOException e) {
 			e.printStackTrace();

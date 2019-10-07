@@ -32,6 +32,7 @@ abstract class Crawler {
 	public List<CrawlingInfo> history;
 
 	// 크롤링시 사용하는 값
+	public List<Map<String, Object>> sourceInfoList;
 	public String site;
 	public String category;
 	public String siteUrl; 
@@ -42,6 +43,7 @@ abstract class Crawler {
 	private final int SOURCEID_insight_food = 2;
 	private final int SOURCEID_wikitree_fashion = 3;
 	private final int SOURCEID_wikitree_food = 4;
+	private final int SOURCEID_wikitree_life = 5;
 	
 	public abstract List<Article> getArticlesFromOnePage(int page);
 
@@ -88,10 +90,39 @@ abstract class Crawler {
 
 			this.sourceId = sourceId;
 			setSourceInfo("위키트리","푸드","https://www.wikitree.co.kr","/main/list.php?nc_id=81","yyyy-MM-dd hh:mm:ss");
+		} else if (sourceId == SOURCEID_wikitree_life) {
+			
+			this.sourceId = sourceId;
+			setSourceInfo("위키트리","라이프-일반","https://www.wikitree.co.kr","/main/list.php?nc_id=80","yyyy-MM-dd hh:mm:ss");
+		} else {
+			this.sourceId = -1;
 		}
 	}
 	
-	// 사이트 양식 셋팅
+	// 사이트 양식 리스트 세팅
+	public void setSourceInfoList(List<Map<String, Object>> sourceInfoList) {
+
+		this.sourceInfoList = sourceInfoList;
+		
+	}
+	
+	// 외부 사이트 양식 셋팅
+	public void setSourceInfo(int sourceId) {
+		
+		this.sourceId = sourceId;
+		
+		// 소스 아이디로 리스트의 소스정보 인덱스를 호출할 수 있게 한다.
+		this.site = (String)sourceInfoList.get(sourceId-1).get("site");
+		this.category = (String)sourceInfoList.get(sourceId-1).get("category");
+		
+		this.siteUrl = (String)sourceInfoList.get(sourceId-1).get("siteUrl");
+		this.listUrl = (String)sourceInfoList.get(sourceId-1).get("listUrl");
+
+		this.dateFormat = (String)sourceInfoList.get(sourceId-1).get("dateFormat");
+		
+	}
+	
+	// 내부 사이트 양식 셋팅
 	public void setSourceInfo(String site, String category, String siteUrl, String listUrl, String dateFormat) {
 
 		this.site = site;

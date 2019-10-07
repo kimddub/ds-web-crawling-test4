@@ -12,4 +12,6 @@ public interface CrawlingService {
 	public Date getLastDate(int sourcId);
 
 	public void resetDB();
+
+	public List<Map<String, Object>> getAllSourceInfo();
 }

@@ -40,8 +40,23 @@
 		LIMIT 1
 	</select>
 	
+	<select id="getAllSourceInfo" resultMap="SourceInfo">
+		SELECT *
+		FROM source
+		ORDER BY id ASC
+	</select>
+	
 	<delete id="truncate">
 		TRUNCATE article
 	</delete>
+	
+	<resultMap id="SourceInfo" type="Map">
+  		<result property="id" column="id"/>
+  		<result property="site" column="site"/>
+  		<result property="category" column="category"/>
+  		<result property="siteUrl" column="siteUrl"/>
+  		<result property="listUrl" column="listUrl"/>
+  		<result property="dateFormat" column="dateFormat"/>
+  	</resultMap> 
 </mapper>
 	

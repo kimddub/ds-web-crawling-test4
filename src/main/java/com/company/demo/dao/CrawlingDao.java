@@ -15,4 +15,6 @@ public interface CrawlingDao {
 	public Date getLastDate(int sourcId);
 
 	public void truncate();
+
+	public List<Map<String, Object>> getAllSourceInfo();
 }

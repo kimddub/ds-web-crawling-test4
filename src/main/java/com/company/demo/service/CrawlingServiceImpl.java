@@ -15,6 +15,10 @@ public class CrawlingServiceImpl implements CrawlingService {
 	@Autowired
 	CrawlingDao crawlingDao;
 	
+	public List<Map<String, Object>> getAllSourceInfo() {
+		return crawlingDao.getAllSourceInfo();
+	}
+	
 	public void collectData(List<Article> articles) {
 		crawlingDao.insert(articles);
 	}

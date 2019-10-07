@@ -1,23 +1,18 @@
 package com.company.demo.crawler;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.groovy.util.Maps;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import com.company.demo.dto.Article;
 
@@ -46,12 +41,14 @@ public class WikitreeCrawler extends Crawler {
 
 		List<Article> collectedArticles = new ArrayList<>();
 		
+		String nc_id = listUrl.split("=")[1];
+		String page =  Integer.toString(crawlingPage);
+		String cpage = listUrl.split("\\?")[0];
+		
         Document listPage = null;
-        
+		JSONObject obj = null;
+		
 		try {
-			String nc_id = listUrl.split("=")[1];
-			String page =  Integer.toString(crawlingPage);
-			String cpage = listUrl.split("\\?")[0];
 			
 			// https://www.wikitree.co.kr/main/list.php?nc_id=81~2
 			listPage = Jsoup.connect("https://www.wikitree.co.kr/main/list_process.php")
@@ -59,23 +56,12 @@ public class WikitreeCrawler extends Crawler {
 					.data("nc_id",nc_id)
 					.data("list_sum","30")
 					.data("notCtg","5, 14 ,12 ,4")
-					.data("cpage",cpage)
+					.data("cpage","/main/list.php")
 					.ignoreContentType(true)
 					.post();
-
-//			.header("content-type", "application/x-www-form-urlencoded; charset=UTF-8")
-//			.header("origin", "https://www.wikitree.co.kr")
-//			.header("referer", "https://www.wikitree.co.kr/main/list.php?nc_id=82")
-//			.header("accept-encoding", "gzip, deflate, sdch, br")
 			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		try {
-
+			
 			JSONParser parser = new JSONParser(); 
-			JSONObject obj = null;
 			obj = (JSONObject) parser.parse(listPage.text());
 			
 			JSONArray list = (JSONArray) obj.get("list"); 

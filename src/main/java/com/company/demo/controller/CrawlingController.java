@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,16 +37,19 @@ public class CrawlingController {
 	
 	private static Logger logger = LoggerFactory.getLogger(WebCrawlingTest4Application.class);
 	
+	private static List<Map<String,Object>> sourceInfoList;
+	
 	private int SOURCEID_insight_fashion = 1;
 	private int SOURCEID_insight_food = 2;
 	private int SOURCEID_wikitree_fashion = 3;
 	private int SOURCEID_wikitree_food = 4;
-	
-	// DB에서 소스아이디에 해당하는 정보를 가져와서 여기서 크롤러에 넣는 식으로 진행
+	private int SOURCEID_wikitree_life = 5;
 	
 	@EventListener(ApplicationReadyEvent.class)
-	public void doSomethingAfterStartup() {
-		//DB 비울까 말까?
+	public void executeCrawlingAfterStartup() {
+		sourceInfoList = crawlingService.getAllSourceInfo();
+		System.out.println(sourceInfoList);
+		
 		crawlingService.resetDB();
 		
 		logger.info("Started initial web Crawling to insigt / thread : {}",Thread.currentThread().getName());
@@ -64,7 +71,7 @@ public class CrawlingController {
 		logger.info("End Scheduling Thread");
 	}
 	
-	@Scheduled(cron = "0 0 10 15W * ?")  // 한달에 15일에 가까운 평일에 한 번 실행 (수정 가능성 희박한 주기)
+	@Scheduled(cron = " 0 0 10 ? * 6")  // 매월 마지막 금요일 아무날이나 10시에 실행 (수정 가능성 희박한 주기)
 	public void executeUpdateCrawling1stDayOfEveryMonth() {
 		
 		logger.info("Start Scheduling Thread : {}", Thread.currentThread().getName());
@@ -74,52 +81,56 @@ public class CrawlingController {
 		logger.info("End Scheduling Thread");
 	}
 	
-	@Scheduled(cron = "0 40 * * * MON-FRI") // 평일 정각마다 돌아감
+	@Scheduled(cron = "0 0/10 * * * MON-FRI") // 평일 정각마다 돌아감
 	public void executeInsightCrawlingEveryHour() {
 		
-		logger.info("Start Scheduling Thread : {}", Thread.currentThread().getName());
+		logger.info("Start InsightCrawling Scheduling Thread : {}", Thread.currentThread().getName());
 		
 		executeInsightCrawling();
 
-		logger.info("End Scheduling Thread");
+		logger.info("End InsightCrawling Scheduling Thread");
 	}
 	
-	@Scheduled(cron = "0 40 * * * MON-FRI") // 평일 정각마다 돌아감
+	@Scheduled(cron = "0 0/10 * * * MON-FRI") // 평일 정각마다 돌아감
 	public void executeWikitreeCrawlingEveryHour() {
 
-		logger.info("Start Scheduling Thread : {}", Thread.currentThread().getName());
+		logger.info("Start WikitreeCrawling Scheduling Thread : {}", Thread.currentThread().getName());
 		
 		executeWikitreeCrawling();
 		
-		logger.info("crawling history : {}", wikitreeCrawler.getHistory().get(wikitreeCrawler.getHistory().size() - 1));
+		logger.info("End WikitreeCrawling Scheduling Thread");
 	}
 	
 	@RequestMapping("crawlInsight")
 	@ResponseBody
 	public String executeInsightCrawling() {
 		// -------------인사이트-패션 크롤링-----------------
+			
+		insightCrawler.setSourceInfoList(sourceInfoList);
 		
 		// DB의 최신 데이터 날짜 셋팅해줌 (null: 일주일 전부터, lastDate: 이어서)
 		Date lastDate = crawlingService.getLastDate(SOURCEID_insight_fashion);
 		insightCrawler.setLimitDate(lastDate);
 		
-		insightCrawler.setSourceId(SOURCEID_insight_fashion);
+		insightCrawler.setSourceInfo(SOURCEID_insight_fashion);
 		
 		List<Article> articles = insightCrawler.crawling();
 		
-		if (articles.size() != 0 && articles != null) { // 수집한 기사 있음
+		try {
 			
-			crawlingService.collectData(articles);
+			if (articles.size() == 0) {
+				// 수집한 기사 없음
+				logger.info(insightCrawler.getErrorMsg());
+				
+			} else if (articles != null && articles.size() != 0) { 
+				// 수집한 기사 있음
+				crawlingService.collectData(articles);
+				
+			} 
+		} catch (Exception e) {
 			
-		} else if (articles != null){ // 수집한 기사 없음
-
-			logger.info(insightCrawler.getErrorMsg());
-			return insightCrawler.getErrorMsg();
-			
-		} else if (articles == null){ // 에러
-			
+			// 크롤링 설정 에러
 			logger.error(insightCrawler.getErrorMsg());
-			return insightCrawler.getErrorMsg();
 		}
 		
 		// -------------인사이트-푸드 크롤링-----------------
@@ -128,23 +139,25 @@ public class CrawlingController {
 		Date lastDate2 = crawlingService.getLastDate(SOURCEID_insight_food);
 		insightCrawler.setLimitDate(lastDate2);
 		
-		insightCrawler.setSourceId(SOURCEID_insight_food);
+		insightCrawler.setSourceInfo(SOURCEID_insight_food);
 		
 		List<Article> articles2 = insightCrawler.crawling();
 		
-		if (articles.size() != 0 && articles != null) { // 수집한 기사 있음
+		try {
 			
-			crawlingService.collectData(articles2);
+			if (articles2.size() == 0) {
+				// 수집한 기사 없음
+				logger.info(insightCrawler.getErrorMsg());
+				
+			} else if (articles2 != null && articles2.size() != 0) { 
+				// 수집한 기사 있음
+				crawlingService.collectData(articles2);
+				
+			} 
+		} catch (Exception e) {
 			
-		} else if (articles != null){ // 수집한 기사 없음
-
-			logger.info(insightCrawler.getErrorMsg());
-			return insightCrawler.getErrorMsg();
-			
-		} else if (articles == null){ // 에러
-			
+			// 크롤링 설정 에러
 			logger.error(insightCrawler.getErrorMsg());
-			return insightCrawler.getErrorMsg();
 		}
 	
 		return "All Insight Crawling done successfully";
@@ -154,29 +167,35 @@ public class CrawlingController {
 	@ResponseBody
 	public String executeWikitreeCrawling() {
 		// -------------위키트리-패션 크롤링-----------------
+
+		wikitreeCrawler.setSourceInfoList(sourceInfoList);
 		
 		// DB의 최신 데이터 날짜 셋팅해줌 (null: 일주일 전부터, lastDate: 이어서)
 		Date lastDate = crawlingService.getLastDate(SOURCEID_wikitree_fashion);
 		wikitreeCrawler.setLimitDate(lastDate);
 		
-		wikitreeCrawler.setSourceId(SOURCEID_wikitree_fashion);
+		wikitreeCrawler.setSourceInfo(SOURCEID_wikitree_fashion);
 		
 		List<Article> articles = wikitreeCrawler.crawling();
-
-		if (articles.size() != 0 && articles != null) { // 수집한 기사 있음
-
-			crawlingService.collectData(articles);
+		
+		try {
 			
-		} else if (articles != null){ // 수집한 기사 없음
-
-			logger.info(wikitreeCrawler.getErrorMsg());
-			return wikitreeCrawler.getErrorMsg();
+			if (articles.size() == 0) {
+				// 수집한 기사 없음
+				logger.info(wikitreeCrawler.getErrorMsg());
+				
+			} else if (articles != null && articles.size() != 0) { 
+				// 수집한 기사 있음
+				crawlingService.collectData(articles);
+				
+			} 
+		} catch (Exception e) {
 			
-		} else { // 에러
-			
+			// 크롤링 설정 에러
 			logger.error(wikitreeCrawler.getErrorMsg());
-			return wikitreeCrawler.getErrorMsg();
 		}
+
+		
 		
 		// -------------위키트리-푸드 크롤링-----------------
 		
@@ -184,23 +203,25 @@ public class CrawlingController {
 		Date lastDate2 = crawlingService.getLastDate(SOURCEID_wikitree_food);
 		wikitreeCrawler.setLimitDate(lastDate2);
 		
-		wikitreeCrawler.setSourceId(SOURCEID_wikitree_food);
+		wikitreeCrawler.setSourceInfo(SOURCEID_wikitree_food);
 		
 		List<Article> articles2 = wikitreeCrawler.crawling();
 		
-		if (articles.size() != 0 && articles != null) { // 수집한 기사 있음
+		try {
 			
-			crawlingService.collectData(articles2);
+			if (articles2.size() == 0) {
+				// 수집한 기사 없음
+				logger.info(wikitreeCrawler.getErrorMsg());
+				
+			} else if (articles2 != null && articles2.size() != 0) { 
+				// 수집한 기사 있음
+				crawlingService.collectData(articles2);
+				
+			} 
+		} catch (Exception e) {
 			
-		} else if (articles != null){ // 수집한 기사 없음
-
-			logger.info(wikitreeCrawler.getErrorMsg());
-			return wikitreeCrawler.getErrorMsg();
-			
-		} else if (articles == null){ // 에러
-			
+			// 크롤링 설정 에러
 			logger.error(wikitreeCrawler.getErrorMsg());
-			return wikitreeCrawler.getErrorMsg();
 		}
 	
 		return "All Wikitree Crawling done successfully";
